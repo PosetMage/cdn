@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
            // Create a break and a div with text
            const breakElement = document.createElement('br');
             const divElement = document.createElement('div');
-            divElement.textContent = '其他站內文章:'; // This sets the text inside the div
+            divElement.textContent = 'Other Posts:'; // This sets the text inside the div
             divElement.style.fontSize = '2em'; // Sets the font size of the div
 
             // Append the break and the text div to the container
