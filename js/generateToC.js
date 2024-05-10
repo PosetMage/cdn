@@ -13,7 +13,7 @@ headers.forEach(function(header, index) {
     });
 });
 
-var tocHTML = '<p><a href="' + parentDirectory + '">上一層</a></p>'; // Use the determined parent directory
+var tocHTML = '<p><a href="' + parentDirectory + '">Back←</a></p>'; // Use the determined parent directory
 
 toc.forEach(function(tocItem) {
     var level = parseInt(tocItem.tagName.substring(1)) - 1;
