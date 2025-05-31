@@ -2,7 +2,7 @@
 // File: cdn/toc-component.js
 // A standalone Lit 3 component that scans the document for <h1>–<h6>, assigns unique IDs,
 // and renders a nested <ul> of links reflecting the heading hierarchy.
-// Import Lit 3 from a CDN—no build tools needed.
+// Modified so that each H2 in the TOC is prefixed with "◇ ".
 // =================================================================================
 
 import { LitElement, html, css } from 'https://unpkg.com/lit@3?module';
@@ -116,13 +116,16 @@ class TableOfContents extends LitElement {
 
   /**
    * Recursively render a nested list of headings as <ul> / <li> / <a> links.
+   * For any node where level === 2, we prefix the link text with "◇ ".
    */
   _renderTree(nodes) {
     return html`
       <ul>
         ${nodes.map(node => html`
           <li>
-            <a href="#${node.id}">${node.text}</a>
+            <a href="#${node.id}">
+              ${node.level === 2 ? '◇ ' : ''}${node.text}
+            </a>
             ${node.children.length > 0
               ? this._renderTree(node.children)
               : ''}
