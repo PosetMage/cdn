@@ -1,3 +1,4 @@
+//PageTrigger.js
 document.addEventListener('DOMContentLoaded', function() {
     const triggerDiv = document.querySelector('.trigger');
 

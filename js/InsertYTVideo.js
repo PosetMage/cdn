@@ -20,7 +20,6 @@ document.addEventListener('DOMContentLoaded', function() {
       iframe.height = '255';
       iframe.src = `https://www.youtube.com/embed/${ytUrl}`;
       iframe.title = 'YouTube video player';
-      iframe.frameBorder = '0';
       iframe.allowFullscreen = true; // Important for modern browsers
 
       container.innerHTML = ''; // Clear "Loading content..."

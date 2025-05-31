@@ -1,13 +1,13 @@
 // HistogramData.js
 
-function generateHistogramData(answers) {
+function generateHistogramData(datas) {
     // Count the number of times each option was selected
     var counts = {};
-    for(var i=0; i<answers.length; i++) {
-        if(answers[i] in counts) {
-            counts[answers[i]]++;
+    for(var i=0; i<datas.length; i++) {
+        if(datas[i] in counts) {
+            counts[datas[i]]++;
         } else {
-            counts[answers[i]] = 1;
+            counts[datas[i]] = 1;
         }
     }
 
