@@ -3,6 +3,7 @@
 // A standalone Lit 3 component that scans the document for <h1>–<h6>, assigns unique IDs,
 // and renders a nested <ul> of links reflecting the heading hierarchy.
 // Modified so that each H2 in the TOC is prefixed with "◇ ".
+// Removed box styling to work better in sidebar.
 // =================================================================================
 
 import { LitElement, html, css } from 'https://unpkg.com/lit@3?module';
@@ -16,9 +17,6 @@ class TableOfContents extends LitElement {
   static styles = css`
     :host {
       display: block;
-      border: 1px solid #ccc;
-      padding: 1em;
-      background-color: #f9f9f9;
       font-family: Arial, sans-serif;
     }
 
@@ -33,6 +31,11 @@ class TableOfContents extends LitElement {
       padding-left: 1em;
     }
 
+    /* Remove padding from the root ul */
+    nav > ul {
+      padding-left: 0;
+    }
+
     li {
       margin: 0.2em 0;
     }
@@ -41,10 +44,13 @@ class TableOfContents extends LitElement {
       color: #0366d6;
       text-decoration: none;
       font-size: 0.9em;
+      display: block;
+      padding: 0.2em 0;
     }
 
     a:hover {
       text-decoration: underline;
+      background-color: rgba(3, 102, 214, 0.1);
     }
   `;
 
@@ -94,7 +100,7 @@ class TableOfContents extends LitElement {
     const stack = [];
 
     items.forEach(item => {
-      // Pop from the stack until we find an item whose level is less than the new item’s level.
+      // Pop from the stack until we find an item whose level is less than the new item's level.
       while (stack.length > 0 && stack[stack.length - 1].level >= item.level) {
         stack.pop();
       }
@@ -103,7 +109,7 @@ class TableOfContents extends LitElement {
       if (stack.length === 0) {
         root.push(item);
       } else {
-        // Otherwise, it’s a child of the current “top” of the stack.
+        // Otherwise, it's a child of the current "top" of the stack.
         stack[stack.length - 1].children.push(item);
       }
 

@@ -3,7 +3,8 @@
 // A standalone Lit 3 component that wraps <table-of-contents> in a sliding sidebar.
 // The sidebar is 200px wide, initially off-screen to the left (-200px).
 // Clicking "☰" slides it in; clicking "«" slides it back out.
-// No build tooling required—just serve this as an ES module.
+// Fixed to provide seamless integration with TOC component.
+
 import { LitElement, html, css } from 'https://unpkg.com/lit@3?module';
 import './toc-component.js'; // Adjust path if necessary
 
@@ -17,7 +18,7 @@ class SidebarComponent extends LitElement {
       display: block;
     }
 
-    /* ☰ Open Button - Fixed overlay at top-right */
+    /* ☰ Open Button - Fixed overlay at top-left */
     .open-button {
       position: fixed;
       top: 5px;
@@ -67,14 +68,12 @@ class SidebarComponent extends LitElement {
 
     /* « Close Button inside sidebar */
     .close-button {
-      position: fixed;
-      right: 10px;
-      align-self: flex-start;
+      align-self: flex-end;
       background: #ffffff;
       border: 1px solid #ccc;
       border-radius: 4px;
       padding: 0.25em 0.5em;
-      margin: 1em;
+      margin: 0.5em;
       cursor: pointer;
       font-size: 1.2em;
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
@@ -84,11 +83,16 @@ class SidebarComponent extends LitElement {
       background: #f0f0f0;
     }
 
-    /* Container for the TOC */
-    nav {
+    /* Container for the TOC - seamless integration */
+    .toc-container {
       flex: 1;
       overflow-y: auto;
-      padding: 0 1em 1em 1em;
+      padding: 0.5em 1em 1em 1em;
+    }
+
+    /* Style the TOC component when inside sidebar */
+    table-of-contents {
+      width: 100%;
     }
   `;
 
@@ -118,10 +122,10 @@ class SidebarComponent extends LitElement {
         <button class="close-button" @click=${this.toggleSidebar} title="Close sidebar">
           «
         </button>
-        <!-- Render the TOC component -->
-        <nav>
+        <!-- TOC container for seamless integration -->
+        <div class="toc-container">
           <table-of-contents></table-of-contents>
-        </nav>
+        </div>
       </div>
     `;
   }
