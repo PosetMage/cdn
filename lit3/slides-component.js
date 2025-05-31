@@ -2,7 +2,7 @@
 //
 // A standalone Lit 3 component that handles slide presentation functionality.
 // Scans for <div class="slide"> elements and provides navigation with URL hash support.
-// Uses URL hash (#section) as the single source of truth for current slide state.
+// Uses URL hash mapping system to sync with TOC component URLs.
 
 import { LitElement, html, css } from 'https://unpkg.com/lit@3?module';
 
@@ -10,7 +10,9 @@ class SlidesComponent extends LitElement {
   static properties = {
     slides: { type: Array },
     currentSlideIndex: { type: Number },
-    totalSlides: { type: Number }
+    totalSlides: { type: Number },
+    urlArray: { type: Array },
+    urlToIndexMap: { type: Object }
   };
 
   static styles = css`
@@ -111,6 +113,8 @@ class SlidesComponent extends LitElement {
     this.slides = [];
     this.currentSlideIndex = 0;
     this.totalSlides = 0;
+    this.urlArray = [];
+    this.urlToIndexMap = {};
     
     // Bind methods to preserve 'this' context
     this.handleHashChange = this.handleHashChange.bind(this);
@@ -139,16 +143,29 @@ class SlidesComponent extends LitElement {
     const slideElements = Array.from(document.querySelectorAll('.slide'));
     
     this.slides = slideElements.map((slide, index) => {
-      // Generate a unique ID if not present
+      // Check if slide has an existing ID, prioritize header-X format for TOC compatibility
       let slideId = slide.id;
+      
+      // If no ID exists, check if there's a header inside the slide
       if (!slideId) {
-        slideId = `slide-${index}`;
-        slide.id = slideId;
+        const headerElement = slide.querySelector('h1, h2, h3, h4, h5, h6');
+        if (headerElement && headerElement.id) {
+          slideId = headerElement.id;
+          slide.id = slideId; // Set the slide ID to match the header ID
+        } else {
+          // Generate header-X format to match TOC component
+          slideId = `header-${index}`;
+          slide.id = slideId;
+          // Also set the header ID if it exists
+          if (headerElement) {
+            headerElement.id = slideId;
+          }
+        }
       }
 
-      // Get the slide title from h2 element
-      const h2Element = slide.querySelector('h2');
-      const title = h2Element ? h2Element.textContent.trim() : `Slide ${index + 1}`;
+      // Get the slide title from h2 element (or any header)
+      const headerElement = slide.querySelector('h1, h2, h3, h4, h5, h6');
+      const title = headerElement ? headerElement.textContent.trim() : `Slide ${index + 1}`;
 
       return {
         id: slideId,
@@ -159,6 +176,9 @@ class SlidesComponent extends LitElement {
     });
 
     this.totalSlides = this.slides.length;
+
+    // Build URL array and mapping
+    this.buildUrlMapping();
 
     // Set initial slide based on URL hash or default to first slide
     this.setInitialSlide();
@@ -176,30 +196,38 @@ class SlidesComponent extends LitElement {
     this.requestUpdate();
   }
 
+  buildUrlMapping() {
+    // Create URL array (index -> URL)
+    this.urlArray = this.slides.map(slide => slide.id);
+    
+    // Create URL to index mapping (URL -> index)
+    this.urlToIndexMap = {};
+    this.slides.forEach((slide, index) => {
+      this.urlToIndexMap[slide.id] = index;
+    });
+  }
+
   setInitialSlide() {
     const hash = window.location.hash.substring(1); // Remove the '#'
     
-    if (hash) {
-      const slideIndex = this.slides.findIndex(slide => slide.id === hash);
-      if (slideIndex !== -1) {
-        this.currentSlideIndex = slideIndex;
-        return;
-      }
+    if (hash && this.urlToIndexMap.hasOwnProperty(hash)) {
+      this.currentSlideIndex = this.urlToIndexMap[hash];
+      return;
     }
     
     // Default to first slide
     this.currentSlideIndex = 0;
-    if (this.slides.length > 0) {
-      this.updateURL(this.slides[0].id);
+    if (this.urlArray.length > 0) {
+      this.updateURL(this.urlArray[0]);
     }
   }
 
   handleHashChange() {
     const hash = window.location.hash.substring(1);
-    if (hash) {
-      const slideIndex = this.slides.findIndex(slide => slide.id === hash);
-      if (slideIndex !== -1 && slideIndex !== this.currentSlideIndex) {
-        this.navigateToSlide(slideIndex);
+    if (hash && this.urlToIndexMap.hasOwnProperty(hash)) {
+      const newIndex = this.urlToIndexMap[hash];
+      if (newIndex !== this.currentSlideIndex) {
+        this.navigateToSlideByIndex(newIndex);
       }
     }
   }
@@ -215,16 +243,18 @@ class SlidesComponent extends LitElement {
     }
   }
 
-  navigateToSlide(slideIndex) {
+  navigateToSlideByIndex(slideIndex) {
     if (slideIndex < 0 || slideIndex >= this.totalSlides) {
       return;
     }
 
     this.currentSlideIndex = slideIndex;
-    const slide = this.slides[slideIndex];
+    
+    // Get URL from array
+    const slideUrl = this.urlArray[slideIndex];
     
     // Update URL hash
-    this.updateURL(slide.id);
+    this.updateURL(slideUrl);
     
     // Show the slide
     this.hideAllSlides();
@@ -237,9 +267,16 @@ class SlidesComponent extends LitElement {
     this.requestUpdate();
   }
 
-  updateURL(slideId) {
+  navigateToSlideByUrl(url) {
+    if (this.urlToIndexMap.hasOwnProperty(url)) {
+      const slideIndex = this.urlToIndexMap[url];
+      this.navigateToSlideByIndex(slideIndex);
+    }
+  }
+
+  updateURL(slideUrl) {
     // Update URL without triggering hashchange event
-    const newURL = `${window.location.pathname}${window.location.search}#${slideId}`;
+    const newURL = `${window.location.pathname}${window.location.search}#${slideUrl}`;
     window.history.replaceState(null, '', newURL);
   }
 
@@ -260,13 +297,19 @@ class SlidesComponent extends LitElement {
 
   nextSlide() {
     if (this.currentSlideIndex < this.totalSlides - 1) {
-      this.navigateToSlide(this.currentSlideIndex + 1);
+      const nextIndex = this.currentSlideIndex + 1;
+      const nextUrl = this.urlArray[nextIndex];
+      this.updateURL(nextUrl);
+      this.navigateToSlideByIndex(nextIndex);
     }
   }
 
   prevSlide() {
     if (this.currentSlideIndex > 0) {
-      this.navigateToSlide(this.currentSlideIndex - 1);
+      const prevIndex = this.currentSlideIndex - 1;
+      const prevUrl = this.urlArray[prevIndex];
+      this.updateURL(prevUrl);
+      this.navigateToSlideByIndex(prevIndex);
     }
   }
 
@@ -277,20 +320,17 @@ class SlidesComponent extends LitElement {
       let tocHTML = '<p><a href="../">Previous Layer</a></p>';
       
       this.slides.forEach(slide => {
-        tocHTML += `<p><a href="#${slide.id}" data-slide-id="${slide.id}">◇ ${slide.title}</a></p>`;
+        tocHTML += `<p><a href="#${slide.id}" data-slide-url="${slide.id}">◇ ${slide.title}</a></p>`;
       });
       
       outlineElement.innerHTML = tocHTML;
       
       // Add click handlers for TOC links
       outlineElement.addEventListener('click', (e) => {
-        if (e.target.tagName === 'A' && e.target.dataset.slideId) {
+        if (e.target.tagName === 'A' && e.target.dataset.slideUrl) {
           e.preventDefault();
-          const slideId = e.target.dataset.slideId;
-          const slideIndex = this.slides.findIndex(slide => slide.id === slideId);
-          if (slideIndex !== -1) {
-            this.navigateToSlide(slideIndex);
-          }
+          const slideUrl = e.target.dataset.slideUrl;
+          this.navigateToSlideByUrl(slideUrl);
         }
       });
     }
