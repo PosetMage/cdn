@@ -1,10 +1,10 @@
 // InjectRootHtml.js
 document.addEventListener('DOMContentLoaded', () => {
-  // Find every element that has a data-include attribute
-  const toInject = document.querySelectorAll('[data-include]');
+  // Find every element that has a inject-root attribute
+  const toInject = document.querySelectorAll('[inject-root]');
 
   toInject.forEach(el => {
-    const filename = el.getAttribute('data-include');
+    const filename = el.getAttribute('inject-root');
     fetch(`/${filename}.html`)
       .then(resp => {
         if (!resp.ok) throw new Error(`Failed to load "/${filename}.html": ${resp.statusText}`);
