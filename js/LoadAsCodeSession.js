@@ -1,105 +1,34 @@
 // LoadAsCodeSession.js
 
-/**
- * createDownloadButton(fileUrl)
- * -----------------------------
- * Returns a <button> element styled to match the “Copy” button,
- * with a click‐handler that fetches `fileUrl` and triggers a download.
- *
- * @param {string} fileUrl  - the URL of the file to download
- * @returns {HTMLButtonElement}
- */
-function createDownloadButton(fileUrl) {
-  const button = document.createElement('button');
-  button.textContent = 'Download';
-
-  // Inline styles (feel free to move into your CSS if preferred)
-  button.style.padding = '0.25em 0.5em';
-  button.style.background = '#eee';
-  button.style.border = '1px solid #ccc';
-  button.style.borderRadius = '4px';
-  button.style.cursor = 'pointer';
-
-  button.addEventListener('click', function () {
-    fetch(fileUrl)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`Network response was not ok: ${response.statusText}`);
-        }
-        return response.blob();
-      })
-      .then(blob => {
-        const a = document.createElement('a');
-        const url = window.URL.createObjectURL(blob);
-        a.href = url;
-        // Use the last segment of fileUrl as the downloaded filename
-        a.download = fileUrl.split('/').pop();
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-      })
-      .catch(error => {
-        console.error('Error downloading file:', error);
-        // Optionally, you could set button.textContent = 'Error' here
-      });
-  });
-
-  return button;
-}
-
 document.addEventListener('DOMContentLoaded', function() {
   // 1. Initial Processing of Existing Elements
   const initialLoadAsCodeElements = document.querySelectorAll('.load_as_code_session');
-  initialLoadAsCodeElements.forEach(loadCodeAndAddControls);
+  initialLoadAsCodeElements.forEach(loadCodeAndAddCopy);
 
   // 2. Mutation Observer for Dynamically Added Elements
   const observer = new MutationObserver(mutations => {
     mutations.forEach(mutation => {
       mutation.addedNodes.forEach(node => {
         if (node.classList && node.classList.contains('load_as_code_session')) {
-          loadCodeAndAddControls(node);
+          loadCodeAndAddCopy(node);
         }
       });
     });
   });
+
   observer.observe(document.body, { childList: true, subtree: true });
 
-  /**
-   * loadCodeAndAddControls(element)
-   * --------------------------------
-   * Fetches the file at element.dataset.url, wraps it in a <pre><code>,
-   * highlights it with Highlight.js (if present), and then appends both
-   * a “Copy” button and a “Download” button in the top-right of the code block.
-   *
-   * @param {HTMLElement} element  – the .load_as_code_session container
-   */
-  function loadCodeAndAddControls(element) {
+  // 3. Load Code, Add Copy Button, and Highlight (Reusable Function)
+  function loadCodeAndAddCopy(element) {
     const url = element.getAttribute('data-url');
     const lang = element.getAttribute('lang');
 
-    if (!url) {
-      console.error('No data-url attribute found on .load_as_code_session element.');
-      return;
-    }
-
     fetch(url)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
-        }
-        return response.text();
-      })
+      .then(response => response.text())
       .then(data => {
-        // Create a wrapper <div> so we can position buttons absolutely
         const container = document.createElement('div');
         container.style.position = 'relative';
-        container.style.marginBottom = '1em';
-        container.style.background = '#f5f5f5';
-        container.style.borderRadius = '4px';
-        container.style.padding = '1em';
 
-        // Create the <pre><code> block
         const codeBlock = document.createElement('pre');
         const codeElement = document.createElement('code');
         codeElement.textContent = data;
@@ -107,21 +36,16 @@ document.addEventListener('DOMContentLoaded', function() {
         if (lang) {
           codeElement.className = `language-${lang}`;
         }
-        // Ensure Highlight.js styling class
-        codeElement.classList.add('hljs');
+
+        codeElement.classList.add('hljs'); // Ensure Highlight.js styling
+
         codeBlock.appendChild(codeElement);
 
-        // Create a single <div> to hold both buttons (“Copy” + “Download”)
-        const buttonGroup = document.createElement('div');
-        buttonGroup.style.position = 'absolute';
-        buttonGroup.style.top = '0.5em';
-        buttonGroup.style.right = '0.5em';
-        buttonGroup.style.display = 'flex';
-        buttonGroup.style.gap = '0.5em';
-
-        // 1) Copy Button
         const copyButton = document.createElement('button');
         copyButton.textContent = 'Copy';
+        copyButton.style.position = 'absolute';
+        copyButton.style.top = '0.5em';
+        copyButton.style.right = '0.5em';
         copyButton.style.padding = '0.25em 0.5em';
         copyButton.style.background = '#eee';
         copyButton.style.border = '1px solid #ccc';
@@ -142,25 +66,13 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
 
-        // 2) Download Button (using our inline helper)
-        const downloadButton = createDownloadButton(url);
-
-        // Append both buttons into the same absolutely-positioned group
-        buttonGroup.appendChild(copyButton);
-        buttonGroup.appendChild(downloadButton);
-
-        // Put everything together
         container.appendChild(codeBlock);
-        container.appendChild(buttonGroup);
-
-        // Replace element’s contents with our new container
+        container.appendChild(copyButton);
         element.innerHTML = '';
         element.appendChild(container);
 
-        // Finally, run Highlight.js on the <code> element (if available)
-        if (typeof hljs !== 'undefined' && hljs.highlightElement) {
-          hljs.highlightElement(codeElement);
-        }
+        hljs.highlightElement(codeElement); // Highlight the code
+
       })
       .catch(error => {
         console.error('Error loading file:', error);
