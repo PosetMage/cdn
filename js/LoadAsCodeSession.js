@@ -1,9 +1,52 @@
 // LoadAsCodeSession.js
 
-// 1. Import the helper that creates a download button for us.
-//    (Assumes your bundler/packager or <script type="module"> setup
-//     will resolve './DownloadButton.js' correctly.)
-import { createDownloadButton } from './DownloadButton.js';
+/**
+ * createDownloadButton(fileUrl)
+ * -----------------------------
+ * Returns a <button> element styled to match the “Copy” button,
+ * with a click‐handler that fetches `fileUrl` and triggers a download.
+ *
+ * @param {string} fileUrl  - the URL of the file to download
+ * @returns {HTMLButtonElement}
+ */
+function createDownloadButton(fileUrl) {
+  const button = document.createElement('button');
+  button.textContent = 'Download';
+
+  // Inline styles (feel free to move into your CSS if preferred)
+  button.style.padding = '0.25em 0.5em';
+  button.style.background = '#eee';
+  button.style.border = '1px solid #ccc';
+  button.style.borderRadius = '4px';
+  button.style.cursor = 'pointer';
+
+  button.addEventListener('click', function () {
+    fetch(fileUrl)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`Network response was not ok: ${response.statusText}`);
+        }
+        return response.blob();
+      })
+      .then(blob => {
+        const a = document.createElement('a');
+        const url = window.URL.createObjectURL(blob);
+        a.href = url;
+        // Use the last segment of fileUrl as the downloaded filename
+        a.download = fileUrl.split('/').pop();
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      })
+      .catch(error => {
+        console.error('Error downloading file:', error);
+        // Optionally, you could set button.textContent = 'Error' here
+      });
+  });
+
+  return button;
+}
 
 document.addEventListener('DOMContentLoaded', function() {
   // 1. Initial Processing of Existing Elements
@@ -20,21 +63,25 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     });
   });
-
   observer.observe(document.body, { childList: true, subtree: true });
 
   /**
    * loadCodeAndAddControls(element)
    * --------------------------------
    * Fetches the file at element.dataset.url, wraps it in a <pre><code>,
-   * highlights it with Highlight.js, and then appends both a "Copy" button
-   * and a "Download" button in the top-right of the code block.
+   * highlights it with Highlight.js (if present), and then appends both
+   * a “Copy” button and a “Download” button in the top-right of the code block.
    *
    * @param {HTMLElement} element  – the .load_as_code_session container
    */
   function loadCodeAndAddControls(element) {
     const url = element.getAttribute('data-url');
     const lang = element.getAttribute('lang');
+
+    if (!url) {
+      console.error('No data-url attribute found on .load_as_code_session element.');
+      return;
+    }
 
     fetch(url)
       .then(response => {
@@ -62,7 +109,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         // Ensure Highlight.js styling class
         codeElement.classList.add('hljs');
-
         codeBlock.appendChild(codeElement);
 
         // Create a single <div> to hold both buttons (“Copy” + “Download”)
@@ -96,10 +142,10 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
 
-        // 2) Download Button (using our new helper)
+        // 2) Download Button (using our inline helper)
         const downloadButton = createDownloadButton(url);
 
-        // Append both buttons into the same absolutely‐positioned group
+        // Append both buttons into the same absolutely-positioned group
         buttonGroup.appendChild(copyButton);
         buttonGroup.appendChild(downloadButton);
 
@@ -111,7 +157,7 @@ document.addEventListener('DOMContentLoaded', function() {
         element.innerHTML = '';
         element.appendChild(container);
 
-        // Finally, run Highlight.js on the <code> element
+        // Finally, run Highlight.js on the <code> element (if available)
         if (typeof hljs !== 'undefined' && hljs.highlightElement) {
           hljs.highlightElement(codeElement);
         }
