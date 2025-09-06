@@ -7,24 +7,30 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // --- Configuration ---
-  // The URL for your navigation data JSON file.
-  // Use relative_url if hosting on the same Jekyll site.
-  // If hosted on a different domain/CDN, use its absolute URL.
-  const navDataUrl = '/navigation.json';
+  // The URL for your site's JSON data file.
+  // This assumes site.json is accessible at the root of your site.
+  const siteDataUrl = '/site.json'; // Changed from navDataUrl to siteDataUrl
 
   // --- Fetch and Render Navigation ---
-  fetch(navDataUrl)
+  fetch(siteDataUrl) // Fetching site.json
     .then(response => {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       return response.json();
     })
-    .then(navItems => {
+    .then(siteData => { // Renamed navItems to siteData for clarity
+      // Check if the 'navigation' property exists in the fetched data
+      if (!siteData.navigation || !Array.isArray(siteData.navigation)) {
+        console.error('Navigation data not found or is not an array in site.json');
+        navContainer.innerHTML = '<span class="nav-error">Navigation data is missing.</span>';
+        return;
+      }
+
       // Clear any existing content (like an initial "Loading...")
       navContainer.innerHTML = '';
 
-      navItems.forEach(item => {
+      siteData.navigation.forEach(item => { // Accessing siteData.navigation
         const anchor = document.createElement('a');
         anchor.className = 'nav-item';
         anchor.href = item.url;
