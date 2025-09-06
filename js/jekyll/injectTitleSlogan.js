@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
   const siteTitleLink = document.querySelector('.site-title');
-  const siteSloganElement = document.querySelector('.site-footer p'); // Assuming your slogan is in a <p> tag within the footer
+  const siteSloganElement = document.querySelector('.slogan');
 
   // Check if the site title element exists
   if (!siteTitleLink) {
