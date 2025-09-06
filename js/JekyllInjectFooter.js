@@ -1,7 +1,19 @@
 // JekyllInjectFooter.js
 document.addEventListener('DOMContentLoaded', () => {
-  // --- New logic to fetch site data and build the footer ---
-  const siteDataUrl = '/site.json';
+
+  // --- Get the base URL from the data attribute on the script tag ---
+  // Find the script tag for JekyllInjectFooter.js
+  const currentScript = document.currentScript;
+  let siteBaseUrl = 'https://alchemy.posetmage.com'; // Default if attribute not found
+
+  if (currentScript && currentScript.dataset.siteBaseUrl) {
+    siteBaseUrl = currentScript.dataset.siteBaseUrl;
+  }
+  // Ensure the base URL doesn't have a trailing slash for consistent concatenation
+  siteBaseUrl = siteBaseUrl.replace(/\/$/, '');
+
+  const siteDataUrl = `${siteBaseUrl}/site.json`;
+  // --- End of new logic ---
 
   fetch(siteDataUrl)
     .then(response => {
@@ -22,9 +34,10 @@ document.addEventListener('DOMContentLoaded', () => {
       footerElement.appendChild(fontAwesomeLink);
 
       // Add the data element for the URL
+      // Using siteBaseUrl for the href attribute as per your general case
       const dataUrlElement = document.createElement('data');
       dataUrlElement.className = 'u-url';
-      dataUrlElement.setAttribute('href', '/'); // Assuming root URL
+      dataUrlElement.setAttribute('href', siteBaseUrl); // Use the dynamically fetched base URL
       footerElement.appendChild(dataUrlElement);
 
       const wrapperDiv = document.createElement('div');
@@ -41,7 +54,11 @@ document.addEventListener('DOMContentLoaded', () => {
       sloganPara.textContent = siteData.slogan || ''; // Use slogan from JSON
       footerCol1.appendChild(sloganPara);
 
-      if (siteData.name || siteData.email) { // Check if author data exists in JSON
+      // Check if author data exists in JSON
+      // NOTE: If your site.json doesn't include 'name' and 'email' anymore,
+      // you'll need to adjust this part to potentially fetch author info from another source
+      // or remove this block if author info is not needed in the footer.
+      if (siteData.name || siteData.email) {
         const contactList = document.createElement('ul');
         contactList.className = 'contact-list';
 
@@ -77,16 +94,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const searchButton = document.createElement('button');
       searchButton.textContent = 'Search with Google';
-      searchButton.onclick = 'SearchSite()'; // Keep the inline onclick for now, or refactor if needed
+      searchButton.onclick = 'SearchSite()';
       footerCol2.appendChild(searchButton);
       footerColWrapperDiv.appendChild(footerCol2);
 
       wrapperDiv.appendChild(footerColWrapperDiv);
 
-      // Social Media List
+      // Social Media List - This is an element that JekyllInjectFooter.js also processes
       const socialMediaDiv = document.createElement('div');
       socialMediaDiv.className = 'social-media-list';
-      socialMediaDiv.setAttribute('inject-root', 'social-media-list'); // This will be handled by the next script execution
+      socialMediaDiv.setAttribute('inject-root', 'social-media-list'); // This will be handled by the next script execution or by this script if it's the only one
       wrapperDiv.appendChild(socialMediaDiv);
 
       // Inline styles for social media icons
@@ -103,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       footerElement.appendChild(wrapperDiv);
 
-      // Append the generated footer to the body (or a specific container if you have one)
+      // Append the generated footer to the body
       document.body.appendChild(footerElement);
 
       // --- Original logic for injecting other roots ---
@@ -112,14 +129,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
       toInject.forEach(el => {
         // Skip the social-media-list element we just injected if it's still being processed
+        // This helps avoid race conditions if the script runs multiple times or in parallel.
         if (el.getAttribute('inject-root') === 'social-media-list') {
-          // It will be processed when its own script runs, or if this script runs after it.
-          // For now, we'll let it be processed by its own script.
+          // This will be handled when its own inject-root attribute is processed.
           return;
         }
 
         const filename = el.getAttribute('inject-root');
-        fetch(`/${filename}.html`) // Assuming these are relative to the site root
+        // IMPORTANT: These injected files are assumed to be relative to the site's root,
+        // so they won't use siteBaseUrl directly, unless they are also designed to be dynamic.
+        fetch(`/${filename}.html`)
           .then(resp => {
             if (!resp.ok) throw new Error(`Failed to load "/${filename}.html": ${resp.statusText}`);
             return resp.text();
