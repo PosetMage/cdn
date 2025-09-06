@@ -7,20 +7,27 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // --- Configuration ---
-  // The URL for your navigation data JSON file.
+  // The URL for your site data JSON file, which now includes navigation.
   // Use relative_url if hosting on the same Jekyll site.
   // If hosted on a different domain/CDN, use its absolute URL.
-  const navDataUrl = '/nav-data.json';
+  const siteDataUrl = '/site.json'; // Changed from navDataUrl to siteDataUrl
 
   // --- Fetch and Render Navigation ---
-  fetch(navDataUrl)
+  fetch(siteDataUrl)
     .then(response => {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       return response.json();
     })
-    .then(navItems => {
+    .then(siteData => { // Changed from navItems to siteData
+      // Check if the 'navigation' key exists in the fetched data
+      if (!siteData.navigation || !Array.isArray(siteData.navigation)) {
+        throw new Error('Navigation data not found or is not an array in site.json');
+      }
+
+      const navItems = siteData.navigation; // Extract the navigation array
+
       // Clear any existing content (like an initial "Loading...")
       navContainer.innerHTML = '';
 
