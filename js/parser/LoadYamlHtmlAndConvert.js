@@ -1,4 +1,4 @@
-// loadAndConvertYamlToHtml.js
+// LoadYamlHtmlAndConvert.js
 // Depends on: js-yaml and convertYamlToHtml (imported explicitly)
 
 import yaml from "https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.mjs";
@@ -33,7 +33,7 @@ function appendCacheBust(url) {
  * @param {{cacheBust?: boolean, yamlFetch?: object, htmlFetch?: object}} [opts]
  * @returns {Promise<string>}
  */
-export async function loadAndConvertYamlToHtml(yamlPath, htmlPath, opts = {}) {
+export async function LoadYamlHtmlAndConvert(yamlPath, htmlPath, opts = {}) {
   const [yml, html] = await Promise.all([
     fetchText(yamlPath, { cacheBust: !!opts.cacheBust, ...(opts.yamlFetch || {}) }),
     fetchText(htmlPath, { cacheBust: !!opts.cacheBust, ...(opts.htmlFetch || {}) }),
